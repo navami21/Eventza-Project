@@ -12,13 +12,12 @@ const userRoutes=require('./routes/userRoutes')
 const eventRoutes=require('./routes/eventRoutes')
 const bookingRoutes=require('./routes/bookinRoutes')
 const stripeRoutes=require('./routes/stripeRoutes')
-const webhookRoutes = require('./routes/webhookRoutes');
 const messageRoutes=require('./routes/messageRoutes')
+
 app.use('/api/users',userRoutes)
 app.use('/api/events',eventRoutes)
 app.use('/api/bookings',bookingRoutes)
 app.use('/api/stripe',stripeRoutes)
-app.use('/webhook', webhookRoutes);
 app.use('/api/messages',messageRoutes)
 
 

@@ -45,6 +45,7 @@ const EventAttendees = () => {
 
   return (
     <div className="container my-4">
+      <h3 style={{paddingBottom:'20px'}}>Attendees</h3>
       <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>
         ← Back
       </button>
