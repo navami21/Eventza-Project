@@ -1,6 +1,8 @@
-// import React, { useEffect, useState } from "react";
+
 import { useEffect, useState } from "react";
 import axiosInstance from "../axiosinterceptor";
+import jsPDF from "jspdf";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 const MyEvents = () => {
   const [bookings, setBookings] = useState([]);
@@ -16,6 +18,29 @@ const MyEvents = () => {
     };
     fetchBookings();
   }, []);
+
+  const generateReceipt = (booking) => {
+    const doc = new jsPDF();
+
+    const eventTitle = booking.eventId?.title || "Event Title";
+    const eventDate = new Date(booking.eventId?.startTime).toLocaleString();
+    const bookedAt = new Date(booking.bookedAt).toLocaleString();
+
+    doc.setFontSize(16);
+    doc.text("Event Booking Payment Receipt", 20, 20);
+
+    doc.setFontSize(12);
+    doc.text(`Booking ID: ${booking._id}`, 20, 40);
+    doc.text(`Event: ${eventTitle}`, 20, 50);
+    doc.text(`Event Date: ${eventDate}`, 20, 60);
+    doc.text(`Booked At: ${bookedAt}`, 20, 70);
+    doc.text(`Seats: ${booking.seats}`, 20, 80);
+    doc.text(`Status: ${booking.status}`, 20, 90);
+    doc.text(`Payment Status: ${booking.paymentStatus}`, 20, 100);
+    doc.text(`Amount Paid: ₹${booking.amountPaid || booking.eventId?.price || 0}`, 20, 110);
+
+    doc.save(`receipt_${booking._id}.pdf`);
+  };
 
   return (
     <div className="container text-dark mt-5">
@@ -48,7 +73,8 @@ const MyEvents = () => {
                       {booking.status}
                     </span>
                   </p>
-                  <p><strong>Payment Status:</strong>
+                  <p>
+                    <strong>Payment Status:</strong>
                     <span className={`badge ms-2 ${
                       booking.eventId?.isPaid
                         ? (booking.paymentStatus === 'paid' ? 'bg-success' :
@@ -57,6 +83,17 @@ const MyEvents = () => {
                     }`}>
                       {booking.eventId?.isPaid ? booking.paymentStatus : 'Free Event'}
                     </span>
+
+                    {booking.eventId?.isPaid && booking.paymentStatus === 'paid' && (
+                      <button
+                        className="btn btn-outline-secondary btn-sm ms-2"
+                        style={{ padding: '2px 6px', fontSize: '1rem', lineHeight: '1' }}
+                        onClick={() => generateReceipt(booking)}
+                        title="Download Receipt"
+                      >
+                        <i className="bi bi-download"></i>
+                      </button>
+                    )}
                   </p>
                 </div>
               </div>
@@ -69,3 +106,4 @@ const MyEvents = () => {
 };
 
 export default MyEvents;
+

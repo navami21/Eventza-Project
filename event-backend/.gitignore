@@ -1,5 +1,2 @@
 .env
-config/credentials.json
 node_modules
-utils/getOAuthToken.js
-utils/token.js

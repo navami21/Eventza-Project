@@ -1,88 +1,108 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../axiosinterceptor';
+import '../css/Login.css';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const { token } = useParams();
 
-  const [email, setEmail] = useState(''); 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleReset = async (e) => {
+  useEffect(() => {
+    document.body.classList.add('login-bg');
+    return () => {
+      document.body.classList.remove('login-bg');
+    };
+  }, []);
+
+  const handleResetPassword = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setMessage('');
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setMessage('Passwords do not match');
+      return;
+    }
+    if (!token) { 
+      setMessage('Password reset token is missing from the URL.');
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('Password should be at least 6 characters');
-      return;
-    }
 
+    setLoading(true);
     try {
-      await axiosInstance.post('/users/reset-password', {
-        email,
+      await axiosInstance.post('/users/forgot-password/reset', {
+        token,
         newPassword,
       });
 
-      setSuccess('Password reset successful! Redirecting to login...');
-
+      setMessage('Password reset successful! Redirecting to login...');
       setTimeout(() => {
         navigate('/login');
-      }, 2000);
+      }, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password');
+      setMessage(err.response?.data?.message || 'Reset failed');
     }
+    setLoading(false);
   };
 
   return (
-    <div className="container min-vh-100 d-flex justify-content-center align-items-center">
-      <div className="card p-4 shadow" style={{ maxWidth: '400px', width: '100%' }}>
-        <h3 className="mb-4">Reset Password</h3>
-        <form onSubmit={handleReset}>
-          <div className="mb-3">
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Enter your registered email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+    <div className="container-fluid vh-100 d-flex align-items-center justify-content-center login-bg">
+      <div className="row w-100 justify-content-center">
+        <div className="col-md-6 col-lg-4">
+          <div className="card p-4 shadow login-card">
+
+            <h3 className="text-center mb-4">Reset Password</h3>
+
+            {message && (
+              <div
+                className={`alert ${message.includes('successful') ? 'alert-success' : 'alert-danger'}`}
+                role="alert"
+              >
+                {message}
+              </div>
+            )}
+
+            <form onSubmit={handleResetPassword}>
+              <div className="mb-3">
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="mb-3">
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="Confirm New Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn btn-primary w-100"
+                disabled={loading}
+                style={{ backgroundColor: '#7f55b1', border: 'none' }}
+              >
+                {loading ? 'Resetting...' : 'Reset Password'}
+              </button>
+            </form>
+
           </div>
-          <div className="mb-3">
-            <input
-              type="password"
-              className="form-control"
-              placeholder="New Password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <input
-              type="password"
-              className="form-control"
-              placeholder="Confirm New Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-          {error && <div className="alert alert-danger">{error}</div>}
-          {success && <div className="alert alert-success">{success}</div>}
-          <button type="submit" className="btn btn-primary w-100"  disabled={success !== ''}  style={{ backgroundColor: '#7f55b1' }}>
-            Reset Password
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );

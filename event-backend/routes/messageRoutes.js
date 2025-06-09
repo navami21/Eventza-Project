@@ -6,7 +6,7 @@ const User=require('../model/userData')
 
 router.post('/send', protect, async (req, res) => {
   try {
-    console.log('User sending message:', req.user);  // log the logged-in user
+    console.log('User sending message:', req.user);  
     const { content } = req.body;
 
     if (!content) {
@@ -17,7 +17,7 @@ router.post('/send', protect, async (req, res) => {
     if (!admin) return res.status(404).json({ message: 'Admin not found' });
 
     const newMessage = new Message({
-      sender: req.user._id, // logged-in user as sender
+      sender: req.user._id, 
       receiver: admin._id,
       content,
       name: req.user.name,

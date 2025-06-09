@@ -45,7 +45,7 @@ const eventSchema = new Schema({
   },
   createdBy: {
     type: Types.ObjectId,
-    ref: 'User', // Assuming your admin/user schema is named 'User'
+    ref: 'User',
     required: true
   },
   calendarEventId: String,

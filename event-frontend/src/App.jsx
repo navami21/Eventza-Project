@@ -17,6 +17,8 @@ import Notifications from './components/Notifications'
 import AdminMessages from './components/AdminMessages'
 import About from './components/About'
 import PublicContact from './components/PublicContact'
+import EventAttendees from './components/EventAttendees'
+import ResetPassword from './components/ResetPassword'
 
 const App = () => {
   return (
@@ -27,6 +29,7 @@ const App = () => {
         <Route path="/signup" element={<Main child={<Signup />} />}/> 
         <Route path="/public-contact" element={<Main child={<PublicContact />} />} /> 
         <Route path="/about" element={<Main child={<About />} />} /> 
+        <Route path="/reset-password/:token" element={<Main child={<ResetPassword />} />} /> 
 
 
         {/* User routes */}
@@ -55,6 +58,7 @@ const App = () => {
         <Route element={<PrivateRoutes allowedRoles={['controller']} />}>
           <Route path="/controller-dashboard" element={<Main child={<ControllerDashboard />} />}/>
           <Route path="/controller/notifications" element={<Main child={<Notifications />} />} />
+          <Route path="/controller/event/:eventId/attendees" element={<Main child={<EventAttendees />} />} />
 
         </Route>
          {/* Catch-all fallback */}

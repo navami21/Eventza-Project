@@ -19,9 +19,13 @@ const EventForm = () => {
     assignedController: '',
     isPaid: false,
     price: 0,
+    
   });
   const [error, setError] = useState('');
-
+  const isValidImageUrl = (url) => {
+    return /\.(jpg|png)$/i.test(url);
+  };
+  
   const fetchEvent = async () => {
     try {
       const res = await axiosInstance.get(`/events/${eventId}`);
@@ -64,31 +68,47 @@ useEffect(() => {
 
  
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>{
+    const { name, value } = e.target;
 
+  if (name === 'image' && value && !isValidImageUrl(value)) {
+    setError('Only JPG and PNG image URLs are allowed');
+  } else {
+    setError('');
+  }
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    if (!isValidImageUrl(form.image)) {
+      setError('Only JPG and PNG image URLs are allowed');
+      return;
+    }
+  
     try {
-        const payload = {
-            ...form,
-            price: Number(form.price),
-            isPaid: form.isPaid === "true" || form.isPaid === true,
-          };
+      const payload = {
+        ...form,
+        price: Number(form.price),
+        isPaid: form.isPaid === "true" || form.isPaid === true,
+      };
+  
+      const { availableSeats, ...rest } = payload;
+  
       if (eventId) {
-        const {availableSeats,...rest}=payload;
         await axiosInstance.put(`/events/${eventId}`, rest);
         alert('Event updated');
       } else {
-        const { availableSeats, ...rest } = payload;
         await axiosInstance.post('/events/create', rest);
         alert('Event created');
       }
+  
       navigate('/admin-dashboard');
     } catch (err) {
       setError('Failed to submit event');
     }
   };
+  
 
   return (
     <>
@@ -212,7 +232,6 @@ useEffect(() => {
   </div>
 )}
 
-    {/* Read-only Available Seats field */}
     {eventId && (
                   <div className="col-md-6">
                     <label className="form-label">Available Seats</label>

@@ -37,6 +37,13 @@ const adminOnly = (req, res, next) => {
   }
   next();
 };
+// Middleware to restrict access to controller users
+const controllerOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== 'controller') {
+    return res.status(403).json({ message: 'Controller access required' });
+  }
+  next();
+};
 
-module.exports = { protect, adminOnly };
+module.exports = { protect, adminOnly,controllerOnly };
 

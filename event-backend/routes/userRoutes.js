@@ -62,89 +62,74 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-router.post('/reset-password', async (req, res) => {
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+router.post('/forgot-password/request', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required' });
+
   try {
-    const { email, newPassword } = req.body;
-
-    if (!email || !newPassword) {
-      return res.status(400).json({ message: 'Email and new password are required' });
-    }
-
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Hash the new password before saving
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    // Generate token
+    const token = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = token;
+    user.passwordResetExpires = Date.now() + 3600000; 
+
+    await user.save();
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+    
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    });
+
+    const mailOptions = {
+      to: email,
+      subject: 'Password Reset',
+      html: `Click <a href="${resetUrl}">here</a> to reset your password. This link expires in 1 hour.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: 'Password reset email sent' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+router.post('/forgot-password/reset', async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ message: 'Token and new password are required' });
+  }
+
+  try {
+    const user = await User.findOne({ 
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: Date.now() } // token not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+    user.password =newPassword;
+
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
 
     await user.save();
 
     res.json({ message: 'Password reset successful' });
-  } catch (error) {
-    console.error(error);
+
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-// Get security question for given email
-router.post('/forgot-password/verify', async (req, res) => {
-  const { email, answer, newPassword } = req.body;
-
-  if (!email || !answer || !newPassword) {
-    return res.status(400).json({ message: 'Email, answer, and new password are required' });
-  }
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Compare hashed security answer using bcrypt
-    const isMatch = await bcrypt.compare(answer, user.securityAnswer);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Incorrect security answer' });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
-    }
-
-    // const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = newPassword;
-    await user.save();
-    return res.json({ message: 'Password reset successful' });
-
-  } catch (err) {
-    console.error('Error in /forgot-password/verify:', err);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-
-// Get security question for given email
-router.post('/forgot-password/question', async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'Email is required' });
-  }
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (!user.securityQuestion) {
-      return res.status(404).json({ message: 'No security question found for this user.' });
-    }
-
-    res.json({ question: user.securityQuestion });
-  } catch (err) {
-    console.error('Error in /forgot-password/question:', err);
-    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

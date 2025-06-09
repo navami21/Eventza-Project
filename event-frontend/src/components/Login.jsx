@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+// import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosinterceptor';
 import '../css/Login.css';
+import { useEffect, useState } from 'react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,11 +13,7 @@ const Login = () => {
 
   // Forgot password states
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
-  const [usernameForReset, setUsernameForReset] = useState('');
-  const [securityQuestion, setSecurityQuestion] = useState('');
-  const [securityAnswer, setSecurityAnswer] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [step, setStep] = useState(1);
+  const [emailForReset, setEmailForReset] = useState('');
   const [message, setMessage] = useState('');
 
   const handleLogin = async (e) => {
@@ -35,38 +32,15 @@ const Login = () => {
     }
   };
 
-  // Step 1: Enter username/email for reset
-  const requestSecurityQuestion = async (e) => {
+  // Forgot password: send reset link email
+  const handleSendResetLink = async (e) => {
     e.preventDefault();
     setMessage('');
     try {
-      // Request security question for the user
-      const { data } = await axiosInstance.post('/users/forgot-password/question', { email: usernameForReset });
-      setSecurityQuestion(data.question);
-      setStep(2);
+      await axiosInstance.post('/users/forgot-password/request', { email: emailForReset });
+      setMessage('If that email exists, a password reset link has been sent.');
     } catch (err) {
-      setMessage(err.response?.data?.message || 'User not found');
-    }
-  };
-
-  // Step 2: Verify answer and reset password
-  const submitSecurityAnswer = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    try {
-      await axiosInstance.post('/users/forgot-password/verify', {
-        email:usernameForReset,
-        answer: securityAnswer,
-        newPassword,
-      });
-      setMessage('Password reset successful! You can login now.');
-      setStep(1);
-      setForgotPasswordMode(false);
-      setUsernameForReset('');
-      setSecurityAnswer('');
-      setNewPassword('');
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Verification failed');
+      setMessage(err.response?.data?.message || 'Error sending reset link');
     }
   };
 
@@ -81,21 +55,22 @@ const Login = () => {
     <div className="container-fluid vh-100 d-flex align-items-center justify-content-center login-bg">
       <div className="row w-100">
 
-  <div className="col-md-6 d-flex flex-column justify-content-center align-items-start p-5 text-white left-intro">
-  <h1 className="display-4 fw-bold">"Book Moments, Not Just Tickets"</h1>
-  <p className="lead mb-4">
-    Discover and reserve your seat at exciting concerts, engaging webinars, and unforgettable conferences — all in one seamless platform.
-  </p>
-  <button className="btn btn1 btn-lg rounded-pill shadow get-started-btn" onClick={() => navigate('/signup')}>
-    Get Started
-  </button>
-</div>
+        <div className="col-md-6 d-flex flex-column justify-content-center align-items-start p-5 text-white left-intro">
+          <h1 className="display-4 fw-bold">"Book Moments, Not Just Tickets"</h1>
+          <p className="lead mb-4">
+            Discover and reserve your seat at exciting concerts, engaging webinars, and unforgettable conferences — all in one seamless platform.
+          </p>
+          <button className="btn btn1 btn-lg rounded-pill shadow get-started-btn" onClick={() => navigate('/signup')}>
+            Get Started
+          </button>
+        </div>
+
         <div className="col-md-6 d-flex justify-content-center align-items-center">
           <div className="card p-4 shadow login-card" style={{ maxWidth: '400px', width: '100%' }}>
 
             {!forgotPasswordMode ? (
               <>
-              <h3 className='text-center'>Eventza</h3>
+                <h3 className='text-center'>Eventza</h3>
                 <form onSubmit={handleLogin}>
                   <div className="mb-3">
                     <input
@@ -128,8 +103,7 @@ const Login = () => {
                     onClick={() => {
                       setForgotPasswordMode(true);
                       setMessage('');
-                      setStep(1);
-                      setUsernameForReset('');
+                      setEmailForReset('');
                     }}
                   >
                     Forgot Password?
@@ -144,60 +118,36 @@ const Login = () => {
               </>
             ) : (
               <>
-              <h6 className='text-center'>Reset Password</h6>
+                <h6 className='text-center'>Reset Password</h6>
 
-                {step === 1 && (
-                  <form onSubmit={requestSecurityQuestion}>
-                    <div className="mb-3">
-                      <input
-                        type="email"
-                        className="form-control"
-                        placeholder="Enter your email"
-                        value={usernameForReset}
-                        onChange={(e) => setUsernameForReset(e.target.value)}
-                        required
-                      />
-                    </div>
-                    {message && <div className="alert alert-danger">{message}</div>}
-                    <button type="submit" className="btn btn-primary w-100"  style={{ backgroundColor: '#7f55b1',border:'none' }}>Next</button>
-                    <div className="text-center mt-3">
-                    {/* <button className="btn btn-link p-0" onClick={() => navigate('/login')}>
-                      login
-                      </button> */}
-                    </div>
-                  </form>
-                )}
-
-                {step === 2 && (
-                  <form onSubmit={submitSecurityAnswer}>
-                    <div className="mb-3">
-                      <label className="form-label">{securityQuestion}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Your Answer"
-                        value={securityAnswer}
-                        onChange={(e) => setSecurityAnswer(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <input
-                        type="password"
-                        className="form-control"
-                        placeholder="New Password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    {message && <div className="alert alert-danger">{message}</div>}
-                    <button type="submit" className="btn btn-primary w-100"  style={{ backgroundColor: '#7f55b1' }}>Reset Password</button>
-                    <div className="text-center mt-3">
-                      <button className="btn btn-link p-0" onClick={() => setForgotPasswordMode(false)} style={{ color: '#7f55b1', textDecoration:'none'}}>Back to Login</button>
-                    </div>
-                  </form>
-                )}
+                <form onSubmit={handleSendResetLink}>
+                  <div className="mb-3">
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="Enter your email"
+                      value={emailForReset}
+                      onChange={(e) => setEmailForReset(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {message && <div className="alert alert-info">{message}</div>}
+                  <button type="submit" className="btn btn-primary w-100" style={{ backgroundColor: '#7f55b1', border: 'none' }}>
+                    Send Reset Link
+                  </button>
+                  <div className="text-center mt-3">
+                    <button
+                      className="btn btn-link p-0"
+                      onClick={() => {
+                        setForgotPasswordMode(false);
+                        setMessage('');
+                      }}
+                      style={{ color: '#7f55b1', textDecoration: 'none' }}
+                    >
+                      Back to Login
+                    </button>
+                  </div>
+                </form>
               </>
             )}
 
